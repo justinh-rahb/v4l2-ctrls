@@ -4,7 +4,7 @@ Touch-friendly V4L2 controls UI with embedded streamer preview.
 
 Usage examples:
   python3 apps/v4l2-ctrls/v4l2-ctrls.py --device /dev/video11
-  python3 apps/v4l2-ctrls/v4l2-ctrls.py --device /dev/video11 --device /dev/video12 --port 5001 --base-url http://127.0.0.1/
+  python3 apps/v4l2-ctrls/v4l2-ctrls.py --device /dev/video11 --device /dev/video12 --port 5001 --camera-url http://127.0.0.1/
 
 Requires:
   - Flask (pip install flask)
@@ -14,7 +14,9 @@ Requires:
 import argparse
 import glob
 import json
+import os
 import subprocess
+import sys
 import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
@@ -43,6 +45,7 @@ HTML_PAGE = """<!doctype html>
   <meta charset=\"utf-8\" />
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
   <title>{title}</title>
+  <base href=\"{app_base_url}\">
   <style>
     :root {{
       color-scheme: light dark;
@@ -268,8 +271,8 @@ HTML_PAGE = """<!doctype html>
   <main>
     <section class=\"panel panel--preview\">
       <h2>Preview</h2>
-      <label for=\"base-url\">Streamer base URL</label>
-      <input id=\"base-url\" type=\"text\" placeholder=\"http://127.0.0.1/\" />
+      <label for=\"camera-url\">Camera stream URL</label>
+      <input id=\"camera-url\" type=\"text\" placeholder=\"http://127.0.0.1/{{path}}\" />
       <div class=\"row\" style=\"margin-top:12px;\">
         <div style=\"flex:1;\">
           <label for=\"camera-select\">Camera</label>
@@ -301,7 +304,7 @@ HTML_PAGE = """<!doctype html>
     </section>
   </main>
   <script>
-    const baseUrlInput = document.getElementById('base-url');
+    const cameraUrlInput = document.getElementById('camera-url');
     const cameraSelect = document.getElementById('camera-select');
     const previewMode = document.getElementById('preview-mode');
     const preview = document.getElementById('preview');
@@ -336,38 +339,54 @@ HTML_PAGE = """<!doctype html>
       localStorage.setItem('v4l2ctrls-theme', theme);
     }}
 
-    function getBaseUrl() {{
-      const url = baseUrlInput.value.trim();
-      if (!url.endsWith('/')) {{
-        return url + '/';
+    function getCameraUrl() {{
+      return cameraUrlInput.value.trim();
+    }}
+
+    function buildCameraUrl(camInfo, mode) {{
+      const suffix = mode === 'webrtc'
+        ? `${{camInfo.prefix}}webrtc`
+        : (mode === 'mjpg'
+          ? `${{camInfo.prefix}}stream.mjpg`
+          : `${{camInfo.prefix}}snapshot.jpg?t=${{Date.now()}}`);
+      let base = getCameraUrl();
+      if (base.includes('{{path}}')) {{
+        return base.replace('{{path}}', suffix);
       }}
-      return url;
+      if (base.includes('{{prefix}}') || base.includes('{{mode}}')) {{
+        return base.replace('{{prefix}}', camInfo.prefix).replace('{{mode}}', mode);
+      }}
+      if (!base.endsWith('/')) {{
+        base += '/';
+      }}
+      return `${{base}}${{suffix}}`;
+    }}
+
+    function apiUrl(path) {{
+      const baseTag = document.querySelector('base');
+      const baseHref = baseTag ? baseTag.href : window.location.href;
+      return new URL(path.replace(/^\\/+/, ''), baseHref).toString();
     }}
 
     function updatePreview() {{
-      const cam = Number(cameraSelect.value);
+      const cam = cameraSelect.value;
       const mode = previewMode.value;
       const camInfo = cams.find(c => c.cam === cam);
       if (!camInfo) {{
         preview.innerHTML = '<div>No camera selected.</div>';
         return;
       }}
-      const base = getBaseUrl();
-      let path = '';
+      const previewUrl = buildCameraUrl(camInfo, mode);
       if (mode === 'webrtc') {{
-        path = camInfo.prefix + 'webrtc';
-        preview.innerHTML = `<iframe src="${{base}}${{path}}"></iframe>`;
+        preview.innerHTML = `<iframe src="${{previewUrl}}"></iframe>`;
       }} else if (mode === 'mjpg') {{
-        path = camInfo.prefix + 'stream.mjpg';
-        preview.innerHTML = `<img src="${{base}}${{path}}" alt="MJPG stream" />`;
+        preview.innerHTML = `<img src="${{previewUrl}}" alt="MJPG stream" />`;
       }} else {{
-        const epoch = Date.now();
-        path = camInfo.prefix + 'snapshot.jpg?t=' + epoch;
-        preview.innerHTML = `<img src="${{base}}${{path}}" alt="Snapshot" />`;
+        preview.innerHTML = `<img src="${{previewUrl}}" alt="Snapshot" />`;
       }}
-      localStorage.setItem('v4l2ctrls-base-url', baseUrlInput.value);
+      localStorage.setItem('v4l2ctrls-base-url', cameraUrlInput.value);
       localStorage.setItem('v4l2ctrls-preview-mode', mode);
-      localStorage.setItem('v4l2ctrls-cam', String(cam));
+      localStorage.setItem('v4l2ctrls-cam', cam);
     }}
 
     function buildControl(control) {{
@@ -483,7 +502,7 @@ HTML_PAGE = """<!doctype html>
     async function fetchControls(cam) {{
       logStatus('Loading controls...');
       try {{
-        const response = await fetch(`/api/v4l2/ctrls?cam=${{cam}}`);
+        const response = await fetch(apiUrl(`api/v4l2/ctrls?cam=${{encodeURIComponent(cam)}}`));
         const data = await response.json();
         if (!response.ok) {{
           throw new Error(data.error || 'Failed to load controls');
@@ -500,7 +519,7 @@ HTML_PAGE = """<!doctype html>
 
     async function fetchInfo(cam) {{
       try {{
-        const response = await fetch(`/api/v4l2/info?cam=${{cam}}`);
+        const response = await fetch(apiUrl(`api/v4l2/info?cam=${{encodeURIComponent(cam)}}`));
         if (!response.ok) {{
           const data = await response.json();
           throw new Error(data.error || 'Failed to fetch info');
@@ -521,7 +540,7 @@ HTML_PAGE = """<!doctype html>
     }}
 
     async function applyChanges() {{
-      const cam = Number(cameraSelect.value);
+      const cam = cameraSelect.value;
       const payload = {{}};
       const previous = controlMap(lastControls);
       controlsContainer.querySelectorAll('[data-control][data-role=\"value\"]').forEach(el => {{
@@ -541,7 +560,7 @@ HTML_PAGE = """<!doctype html>
       }}
       applyButton.disabled = true;
       try {{
-        const response = await fetch(`/api/v4l2/set?cam=${{cam}}`, {{
+        const response = await fetch(apiUrl(`api/v4l2/set?cam=${{encodeURIComponent(cam)}}`), {{
           method: 'POST',
           headers: {{'Content-Type': 'application/json'}},
           body: JSON.stringify(payload),
@@ -561,10 +580,9 @@ HTML_PAGE = """<!doctype html>
         if (previewMode.value === 'snapshot') {{
           updatePreview();
         }} else {{
-          const base = getBaseUrl();
           const camInfo = cams.find(c => c.cam === cam);
           if (camInfo) {{
-            const snap = `${{base}}${{camInfo.prefix}}snapshot.jpg?t=${{Date.now()}}`;
+            const snap = buildCameraUrl(camInfo, 'snapshot');
             const img = new Image();
             img.src = snap;
           }}
@@ -581,36 +599,36 @@ HTML_PAGE = """<!doctype html>
       themeSelect.value = storedTheme;
       applyTheme(storedTheme);
       const storedBase = localStorage.getItem('v4l2ctrls-base-url');
-      baseUrlInput.value = storedBase || '{base_url}';
-      const camsResp = await fetch('/api/cams');
+      cameraUrlInput.value = storedBase || '{camera_url}';
+      const camsResp = await fetch(apiUrl('api/cams'));
       cams = await camsResp.json();
       cameraSelect.innerHTML = '';
       cams.forEach(cam => {{
-        const opt = new Option(`Cam ${{cam.cam}}`, String(cam.cam));
+        const opt = new Option(cam.cam, cam.cam);
         cameraSelect.add(opt);
       }});
-      const storedCam = Number(localStorage.getItem('v4l2ctrls-cam'));
+      const storedCam = localStorage.getItem('v4l2ctrls-cam');
       if (storedCam && cams.find(c => c.cam === storedCam)) {{
-        cameraSelect.value = String(storedCam);
+        cameraSelect.value = storedCam;
       }}
       const storedMode = localStorage.getItem('v4l2ctrls-preview-mode');
       if (storedMode) {{
         previewMode.value = storedMode;
       }}
       updatePreview();
-      await fetchControls(Number(cameraSelect.value));
-      await fetchInfo(Number(cameraSelect.value));
+      await fetchControls(cameraSelect.value);
+      await fetchInfo(cameraSelect.value);
     }}
 
-    baseUrlInput.addEventListener('change', updatePreview);
+    cameraUrlInput.addEventListener('change', updatePreview);
     previewMode.addEventListener('change', updatePreview);
     themeSelect.addEventListener('change', () => {{
       applyTheme(themeSelect.value);
     }});
     cameraSelect.addEventListener('change', async () => {{
       updatePreview();
-      await fetchControls(Number(cameraSelect.value));
-      await fetchInfo(Number(cameraSelect.value));
+      await fetchControls(cameraSelect.value);
+      await fetchInfo(cameraSelect.value);
     }});
     applyButton.addEventListener('click', applyChanges);
     resetButton.addEventListener('click', () => {{
@@ -633,7 +651,7 @@ HTML_PAGE = """<!doctype html>
 
 @dataclass(frozen=True)
 class Camera:
-    cam: int
+    cam: str
     device: str
     prefix: str
 
@@ -643,9 +661,14 @@ def log(msg: str) -> None:
     print(f"[{ts}] {msg}", flush=True)
 
 
-def detect_devices(limit: int = 8) -> List[str]:
-    devices = sorted(glob.glob("/dev/video*"))
-    return devices[:limit]
+def parse_listed_devices(output: str) -> List[str]:
+    devices = []
+    for line in output.splitlines():
+        line = line.strip()
+        if not line.startswith("/dev/"):
+            continue
+        devices.append(line.split()[0])
+    return devices
 
 
 def run_v4l2(args: List[str], timeout: float = 3.0) -> Tuple[int, str, str]:
@@ -661,6 +684,25 @@ def run_v4l2(args: List[str], timeout: float = 3.0) -> Tuple[int, str, str]:
         return result.returncode, result.stdout, result.stderr
     except subprocess.TimeoutExpired as exc:
         return 124, "", f"Timeout running {' '.join(args)}: {exc}"
+
+
+def detect_devices(limit: int = 8) -> List[str]:
+    devices: List[str] = []
+    code, out, err = run_v4l2(["v4l2-ctl", "--list-devices"], timeout=2.0)
+    if code == 0:
+        devices = parse_listed_devices(out)
+    if not devices:
+        subdevs = sorted(glob.glob("/dev/v4l-subdev*"))
+        videos = sorted(glob.glob("/dev/video*"))
+        devices = subdevs + videos
+    subdevs = [device for device in devices if "/dev/v4l-subdev" in device]
+    others = [device for device in devices if device not in subdevs]
+    devices = subdevs + others
+    preferred = "/dev/v4l-subdev2"
+    if preferred in devices:
+        devices.remove(preferred)
+        devices.insert(0, preferred)
+    return devices[:limit]
 
 
 def normalize_type(ctrl_type: Optional[str]) -> str:
@@ -746,21 +788,20 @@ def sort_controls(controls: List[Dict[str, Optional[int]]]) -> List[Dict[str, Op
 
 
 def get_cam_or_400(cam_index: str, cams: List[Camera]):
-    try:
-        cam = int(cam_index)
-    except (TypeError, ValueError) as exc:
-        log(f"Invalid cam index {cam_index!r}: {exc}")
-        return None, jsonify({"error": "Invalid camera index"}), 400
-    if cam < 1 or cam > len(cams):
-        return None, jsonify({"error": "Camera out of range"}), 400
-    return cams[cam - 1], None, None
+    if not cam_index:
+        return None, jsonify({"error": "Missing camera id"}), 400
+    cam = next((item for item in cams if item.cam == cam_index), None)
+    if cam is None:
+        return None, jsonify({"error": "Camera not found"}), 400
+    return cam, None, None
 
 
 @APP.route("/")
 def index():
     title = APP.config.get("title") or "V4L2 Controls"
-    base_url = APP.config.get("base_url")
-    return HTML_PAGE.format(title=title, base_url=base_url)
+    camera_url = APP.config.get("camera_url")
+    app_base_url = APP.config.get("app_base_url") or "./"
+    return HTML_PAGE.format(title=title, camera_url=camera_url, app_base_url=app_base_url)
 
 
 @APP.route("/api/cams")
@@ -855,12 +896,21 @@ def api_info():
 
 def build_cams(devices: List[str]) -> List[Camera]:
     cams = []
+    seen = set()
     for idx, device in enumerate(devices, start=1):
+        base = os.path.basename(device)
+        cam_id = base or f"cam{idx}"
+        if cam_id in seen:
+            suffix = 2
+            while f"{cam_id}-{suffix}" in seen:
+                suffix += 1
+            cam_id = f"{cam_id}-{suffix}"
+        seen.add(cam_id)
         if idx == 1:
             prefix = "/webcam/"
         else:
             prefix = f"/webcam{idx}/"
-        cams.append(Camera(cam=idx, device=device, prefix=prefix))
+        cams.append(Camera(cam=cam_id, device=device, prefix=prefix))
     return cams
 
 
@@ -869,7 +919,9 @@ def main() -> None:
     parser.add_argument("--device", action="append", default=[], help="V4L2 device path")
     parser.add_argument("--host", default="0.0.0.0", help="Host to bind")
     parser.add_argument("--port", type=int, default=5000, help="Port to bind")
-    parser.add_argument("--base-url", default="http://127.0.0.1/", help="Base URL for preview embeds")
+    parser.add_argument("--camera-url", default="http://127.0.0.1/", help="Camera stream base URL")
+    parser.add_argument("--base-url", dest="camera_url", help=argparse.SUPPRESS)
+    parser.add_argument("--app-base-url", default="", help="Base URL path for UI routing (optional)")
     parser.add_argument("--title", default="", help="Optional page title")
     args = parser.parse_args()
 
@@ -877,9 +929,17 @@ def main() -> None:
     if not devices:
         raise SystemExit("No devices found. Use --device to specify V4L2 devices.")
 
+    if "--base-url" in sys.argv:
+        log("Warning: --base-url is deprecated, use --camera-url instead.")
+
+    app_base_url = args.app_base_url.strip()
+    if app_base_url and not app_base_url.endswith("/"):
+        app_base_url += "/"
+
     cams = build_cams(devices)
     APP.config["cams"] = cams
-    APP.config["base_url"] = args.base_url
+    APP.config["camera_url"] = args.camera_url
+    APP.config["app_base_url"] = app_base_url
     APP.config["title"] = args.title
 
     log(f"Starting v4l2-ctrls on {args.host}:{args.port} for {len(cams)} camera(s)")
