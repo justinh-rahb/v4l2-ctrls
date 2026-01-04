@@ -132,7 +132,7 @@ echo -e "${GREEN}✓ Service file created${NC}"
 # Enable and start service
 echo ""
 echo -e "${YELLOW}Do you want to enable and start the service now? (y/n)${NC}"
-read -r response
+read -r response < /dev/tty
 
 if [ "$response" = "y" ] || [ "$response" = "Y" ] || [ "$response" = "yes" ] || [ "$response" = "YES" ]; then
     systemctl enable "$SERVICE_NAME"
