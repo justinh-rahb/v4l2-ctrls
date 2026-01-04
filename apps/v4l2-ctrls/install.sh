@@ -1,6 +1,6 @@
 #!/bin/bash
 # V4L2 Controls Installer for Klipper Printers
-# Usage: curl -sSL https://raw.githubusercontent.com/justinh-rahb/v4l2-mpp/refs/heads/main/apps/v4l2-ctrls/install.sh | bash
+# Usage: curl -sSL https://raw.githubusercontent.com/justinh-rahb/v4l2-mpp/refs/heads/installer/apps/v4l2-ctrls/install.sh | bash
 
 set -e
 
@@ -131,11 +131,10 @@ echo -e "${GREEN}✓ Service file created${NC}"
 
 # Enable and start service
 echo ""
-echo -e "${YELLOW}Do you want to enable and start the service now? [Y/n]${NC}"
-read -r -p "" response
-response=${response:-Y}
+echo -e "${YELLOW}Do you want to enable and start the service now? (y/n)${NC}"
+read -r response
 
-if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+if [ "$response" = "y" ] || [ "$response" = "Y" ] || [ "$response" = "yes" ] || [ "$response" = "YES" ]; then
     systemctl enable "$SERVICE_NAME"
     systemctl start "$SERVICE_NAME"
     
