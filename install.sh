@@ -122,6 +122,10 @@ Group=${ACTUAL_USER}
 WorkingDirectory=${INSTALL_DIR}
 Environment="PATH=${INSTALL_DIR}/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ExecStart=${INSTALL_DIR}/venv/bin/python3 ${INSTALL_DIR}/v4l2-ctrls.py \\
+  --device /dev/video0 \\
+  --camera-url "http://klipper/webcam/" \\
+  --stream-path-mjpg "{prefix}?action=stream" \\
+  --stream-path-snapshot "{prefix}?action=snapshot" \\
   --host 0.0.0.0 \\
   --port 5000
 Restart=always
