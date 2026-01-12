@@ -1,6 +1,6 @@
 # v4l2-ctrls
 
-Touch-friendly web UI for managing V4L2 camera controls with embedded video preview. This repository is a standalone extraction from the `v4l2-mpp` project, packaged so you can run it as an independent Flask app.
+Touch-friendly web UI for managing V4L2 camera controls with embedded video preview. This repository is a standalone extraction of code I contributed to the [`v4l2-mpp`](https://github.com/paxx12/v4l2-mpp) project, packaged so you can run it as an independent Flask app.
 
 ## Features
 
@@ -135,4 +135,5 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE).
 
 ## Credits
 
-Extracted from the `v4l2-mpp` firmware project to provide a standalone web utility.
+Extracted from the [`v4l2-mpp`](https://github.com/paxx12/v4l2-mpp) project to provide a standalone web utility.
+Initial testing and debugging by [@horzadome](https://github.com/horzadome)
