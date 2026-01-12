@@ -3,16 +3,16 @@
 ## One-Line Install
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/justinh-rahb/v4l2-mpp/refs/heads/installer/apps/v4l2-ctrls/install.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/justinh-rahb/v4l2-ctrls/refs/heads/main/install.sh | sudo bash
 ```
 
 ## What It Does
 
 1. ✅ Checks for and installs v4l-utils (if needed)
 2. ✅ Checks for Python 3 and pip
-3. ✅ Downloads v4l2-ctrls.py to `/home/pi/v4l2-ctrls/`
+3. ✅ Downloads the latest v4l2-ctrls release to `/home/pi/v4l2-ctrls/` (backs up any existing install)
 4. ✅ Creates Python virtual environment
-5. ✅ Installs Flask in the venv
+5. ✅ Installs requirements in the venv
 6. ✅ Creates systemd service
 7. ✅ Prompts to enable and start the service
 
@@ -25,9 +25,9 @@ http://<your-pi-ip>:5000
 ## Default Configuration
 
 - **Device**: `/dev/video0`
-- **Camera URL**: `/webcam/`
-- **MJPG Stream**: `?action=stream`
-- **Snapshot**: `?action=snapshot`
+- **Camera URL**: `http://127.0.0.1/`
+- **MJPG Stream**: `{prefix}stream.mjpg`
+- **Snapshot**: `{prefix}snapshot.jpg`
 - **Port**: `5000`
 
 This works with most common Klipper camera setups like:
@@ -47,8 +47,8 @@ Change the ExecStart line to use your device/URLs:
 ExecStart=/home/pi/v4l2-ctrls/venv/bin/python3 /home/pi/v4l2-ctrls/v4l2-ctrls.py \
   --device /dev/video2 \
   --camera-url "http://10.0.3.229:8081/" \
-  --stream-path-mjpg "?action=stream" \
-  --stream-path-snapshot "?action=snapshot" \
+  --stream-path-mjpg "{prefix}?action=stream" \
+  --stream-path-snapshot "{prefix}?action=snapshot" \
   --host 0.0.0.0 \
   --port 5000
 ```
@@ -107,15 +107,15 @@ ls -la /dev/video*
 # Test manually
 cd /home/pi/v4l2-ctrls
 source venv/bin/activate
-python3 v4l2-ctrls.py --device /dev/video0 --camera-url "/webcam/" --stream-path-mjpg "?action=stream" --stream-path-snapshot "?action=snapshot"
+python3 v4l2-ctrls.py --device /dev/video0 --camera-url "http://127.0.0.1/"
 ```
 
 ### Camera preview not working
 1. Make sure your camera streamer is running
 2. Check the camera URL in the web UI matches your setup
-3. Test the URLs directly in a browser:
-   - MJPG: `http://your-pi-ip/webcam/?action=stream`
-   - Snapshot: `http://your-pi-ip/webcam/?action=snapshot`
+3. Test the URLs directly in a browser (use your configured base URL/prefix):
+   - MJPG: `http://your-pi-ip/stream.mjpg`
+   - Snapshot: `http://your-pi-ip/snapshot.jpg`
 
 ### Port 5000 already in use
 Change the port in the service file to something else (e.g., 5001):
@@ -135,18 +135,15 @@ If you prefer to install manually without the script:
 sudo apt-get update
 sudo apt-get install -y v4l-utils python3 python3-pip python3-venv
 
-# Create directory
-mkdir -p /home/pi/v4l2-ctrls
+# Download release
+curl -sSL https://github.com/justinh-rahb/v4l2-ctrls/archive/refs/heads/main.tar.gz | tar -xz
+sudo mv v4l2-ctrls-main /home/pi/v4l2-ctrls
 cd /home/pi/v4l2-ctrls
-
-# Download script
-curl -sSL https://raw.githubusercontent.com/justinh-rahb/v4l2-mpp/refs/heads/main/apps/v4l2-ctrls/v4l2-ctrls.py -o v4l2-ctrls.py
-chmod +x v4l2-ctrls.py
 
 # Create venv and install Flask
 python3 -m venv venv
 source venv/bin/activate
-pip install Flask
+pip install -r requirements.txt
 deactivate
 
 # Create service file
@@ -177,4 +174,4 @@ Tested and working on:
 ## Support
 
 For issues, feature requests, or questions:
-https://github.com/justinh-rahb/v4l2-mpp/issues
+https://github.com/justinh-rahb/v4l2-ctrls/issues
