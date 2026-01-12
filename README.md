@@ -2,6 +2,8 @@
 
 Touch-friendly web UI for managing V4L2 camera controls with embedded video preview. This repository is a standalone extraction of code I contributed to the [`v4l2-mpp`](https://github.com/paxx12/v4l2-mpp) project, packaged so you can run it as an independent Flask app.
 
+![screenshot](examples/screenshot.png)
+
 ## Features
 
 - Real-time V4L2 control adjustment via a web interface
