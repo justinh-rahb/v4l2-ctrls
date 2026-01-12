@@ -19,6 +19,8 @@ Touch-friendly web UI for managing V4L2 camera controls with embedded video prev
 
 ## Installation
 
+For the installer, see [docs/install.md](docs/install.md).
+
 ```sh
 git clone <repo-url>
 cd v4l2-ctrls

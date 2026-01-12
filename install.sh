@@ -12,8 +12,10 @@ NC='\033[0m' # No Color
 
 # Configuration
 INSTALL_DIR="/home/pi/v4l2-ctrls"
-REPO_URL="https://github.com/justinh-rahb/v4l2-ctrls"
-ARCHIVE_URL="${REPO_URL}/archive/refs/heads/main.tar.gz"
+REPO_SLUG="justinh-rahb/v4l2-ctrls"
+REPO_URL="https://github.com/${REPO_SLUG}"
+INSTALL_REF="${INSTALL_REF:-main}"
+ARCHIVE_URL="https://codeload.github.com/${REPO_SLUG}/tar.gz/${INSTALL_REF}"
 SERVICE_NAME="v4l2-ctrls"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 
@@ -69,12 +71,10 @@ else
 fi
 
 # Download latest release
-echo -e "${GREEN}[4/7]${NC} Downloading v4l2-ctrls..."
+echo -e "${GREEN}[4/7]${NC} Downloading v4l2-ctrls (${INSTALL_REF})..."
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
 curl -sSL "$ARCHIVE_URL" -o "$TMP_DIR/v4l2-ctrls.tar.gz"
-tar -xzf "$TMP_DIR/v4l2-ctrls.tar.gz" -C "$TMP_DIR"
-SRC_DIR=$(find "$TMP_DIR" -maxdepth 1 -type d -name "v4l2-ctrls-*")
 
 if [ -d "$INSTALL_DIR" ]; then
     BACKUP_DIR="${INSTALL_DIR}.bak.$(date +%Y%m%d%H%M%S)"
@@ -83,7 +83,7 @@ if [ -d "$INSTALL_DIR" ]; then
 fi
 
 mkdir -p "$INSTALL_DIR"
-cp -a "$SRC_DIR"/. "$INSTALL_DIR"/
+tar -xzf "$TMP_DIR/v4l2-ctrls.tar.gz" -C "$INSTALL_DIR" --strip-components=1
 cd "$INSTALL_DIR"
 echo -e "${GREEN}✓ Downloaded to ${INSTALL_DIR}${NC}"
 
