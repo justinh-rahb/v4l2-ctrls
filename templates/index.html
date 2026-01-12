@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title }}</title>
+  <base href="{{ app_base_url }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <header>
+    <h1>{{ title }}</h1>
+    <div class="header-controls">
+      <label for="theme-select">Theme</label>
+      <select id="theme-select" class="theme-select">
+        <option value="system">System</option>
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+      </select>
+    </div>
+  </header>
+  <main>
+    <section class="panel panel--preview">
+      <h2>Preview</h2>
+      <label for="camera-url">Camera stream URL</label>
+      <input id="camera-url" type="text" placeholder="http://127.0.0.1/{path}" />
+      <div class="row" style="margin-top:12px;">
+        <div style="flex:1;">
+          <label for="camera-select">Camera</label>
+          <select id="camera-select"></select>
+        </div>
+        <div style="flex:1;">
+          <label for="preview-mode">Preview mode</label>
+          <select id="preview-mode">
+            <option value="webrtc">WebRTC</option>
+            <option value="mjpg">MJPG</option>
+            <option value="snapshot">Snapshot</option>
+          </select>
+        </div>
+      </div>
+      <div class="preview" id="preview" style="margin-top:12px;"></div>
+      <div class="note">Changes are not persisted; persistence is handled by the streamer/service.</div>
+    </section>
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Controls</h2>
+        <label class="checkbox">
+          <input type="checkbox" id="auto-apply" />
+          <span>Auto-apply</span>
+        </label>
+      </div>
+      <div id="controls"></div>
+      <div class="action-bar">
+        <button id="apply">Apply changes</button>
+        <button id="reset" class="ghost">Reset</button>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Status</h2>
+      <div class="status" id="status">Ready.</div>
+    </section>
+  </main>
+  <script>
+    window.V4L2CtrlsConfig = {
+      cameraUrl: {{ camera_url | tojson }},
+      storagePrefix: {{ storage_prefix | tojson }},
+    };
+  </script>
+  <script src="{{ url_for('static', filename='js/controls.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+</body>
+</html>

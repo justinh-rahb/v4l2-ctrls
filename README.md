@@ -1,10 +1,10 @@
 # v4l2-ctrls
 
-Touch-friendly web UI for managing V4L2 camera controls with embedded video preview.
+Touch-friendly web UI for managing V4L2 camera controls with embedded video preview. This repository is a standalone extraction from the `v4l2-mpp` project, packaged so you can run it as an independent Flask app.
 
 ## Features
 
-- Real-time V4L2 control adjustment via web interface
+- Real-time V4L2 control adjustment via a web interface
 - Automatic detection and handling of read-only controls
 - Multi-camera support with embedded video streams
 - Modern, colorful UI optimized for touch devices with light/dark theme support
@@ -13,9 +13,21 @@ Touch-friendly web UI for managing V4L2 camera controls with embedded video prev
 
 ## Requirements
 
-- Python 3
-- Flask (`pip install flask`)
+- Python 3.9+
 - `v4l2-ctl` available in `PATH`
+- A V4L2-compatible camera device (e.g., `/dev/video0`)
+
+## Installation
+
+For the installer, see [docs/install.md](docs/install.md).
+
+```sh
+git clone <repo-url>
+cd v4l2-ctrls
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
 ## Usage
 
@@ -50,21 +62,14 @@ python3 v4l2-ctrls.py \
   --stream-path-snapshot "{prefix}snapshot.jpg"
 ```
 
-**Non-standard stream backend:**
-```sh
-python3 v4l2-ctrls.py \
-  --device /dev/video0 \
-  --stream-prefix /dev/video0=/camera/ \
-  --stream-path-webrtc "{prefix}live.webrtc" \
-  --stream-path-mjpg "{prefix}feed.mjpeg" \
-  --stream-path-snapshot "{prefix}snap.png"
-```
+Open the UI at `http://<host>:<port>/` (default: `http://127.0.0.1:5000/`).
 
-## Command-line Options
+### Command-line options
 
 - `--device <path>` - V4L2 device path (can be specified multiple times; auto-detects if omitted)
 - `--host <address>` - Host to bind (default: `0.0.0.0`)
 - `--port <number>` - Port to bind (default: `5000`)
+- `--socket <path>` - Optional Unix socket path for socket-based serving
 - `--camera-url <url>` - Base URL for camera streams (default: `http://127.0.0.1/`)
 - `--app-base-url <path>` - Base URL path for UI routing when behind a reverse proxy (optional)
 - `--title <text>` - Custom page title (optional)
@@ -73,7 +78,7 @@ python3 v4l2-ctrls.py \
 - `--stream-path-mjpg <template>` - Template for MJPG stream path (default: `{prefix}stream.mjpg`)
 - `--stream-path-snapshot <template>` - Template for snapshot stream path (default: `{prefix}snapshot.jpg`)
 
-## URL Template Variables
+### URL template variables
 
 The `--camera-url` option supports template variables for flexible stream routing:
 
@@ -97,35 +102,37 @@ The `--camera-url` option supports template variables for flexible stream routin
 --camera-url http://192.168.1.100/{prefix}{mode}
 ```
 
-## Stream Path Templates
+### Stream path templates
 
 The stream path options (`--stream-path-webrtc`, `--stream-path-mjpg`, `--stream-path-snapshot`) support the same
 template variables as above, plus `{basename}` for the device basename (e.g., `video12`).
 
-## API Endpoints
+## Architecture overview
+
+- `v4l2_ctrls/app.py` - Flask app factory and CLI entrypoint
+- `v4l2_ctrls/routes.py` - HTTP route handlers
+- `v4l2_ctrls/camera.py` - V4L2 device discovery and control parsing
+- `v4l2_ctrls/utils.py` - Logging and helper utilities
+- `templates/` - Jinja templates for the UI
+- `static/` - CSS and JavaScript assets
+
+## API endpoints
 
 - `GET /` - Main UI page
 - `GET /api/cams` - List cameras and streamer configuration
 - `GET /api/v4l2/ctrls?cam=<cam_id>` - Get available controls for device
 - `POST /api/v4l2/set?cam=<cam_id>` - Apply control value changes (JSON body: `{"control_name": value}`)
 - `GET /api/v4l2/info?cam=<cam_id>` - Get device information
+- `GET /api/v4l2/debug?cam=<cam_id>` - Debug raw `v4l2-ctl` output
 
-## Reverse Proxy Configuration
+## Contributing
 
-When running behind a reverse proxy (e.g., nginx), use `--app-base-url` to set the base path:
-```sh
-python3 v4l2-ctrls.py --app-base-url /v4l2/
-```
+Pull requests are welcome. Please keep changes focused and include any relevant documentation or testing notes.
 
-Then configure your proxy to forward `/v4l2/` to the Flask app.
+## License
 
-## Integration
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
 
-Integrated into the v4l2-mpp firmware build system. Installed to `/usr/local/bin/v4l2-ctrls.py` during firmware compilation.
+## Credits
 
-## Notes
-
-- Control changes are applied immediately but **not persisted** across reboots
-- Persistence is handled by the camera streamer/service layer
-- Camera auto-detection prefers `/dev/v4l-subdev2` if available
-- Up to 8 devices are auto-detected by default
+Extracted from the `v4l2-mpp` firmware project to provide a standalone web utility.

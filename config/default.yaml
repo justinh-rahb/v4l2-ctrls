@@ -1,0 +1,10 @@
+server:
+  host: 0.0.0.0
+  port: 5000
+  debug: false
+
+camera:
+  default_device: /dev/video0
+
+ui:
+  theme: vibrant

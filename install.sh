@@ -1,6 +1,6 @@
 #!/bin/bash
 # V4L2 Controls Installer for Klipper Printers
-# Usage: curl -sSL https://raw.githubusercontent.com/justinh-rahb/v4l2-mpp/refs/heads/installer/apps/v4l2-ctrls/install.sh | bash
+# Usage: curl -sSL https://raw.githubusercontent.com/justinh-rahb/v4l2-ctrls/refs/heads/main/install.sh | bash
 
 set -e
 
@@ -12,7 +12,10 @@ NC='\033[0m' # No Color
 
 # Configuration
 INSTALL_DIR="/home/pi/v4l2-ctrls"
-SCRIPT_URL="https://raw.githubusercontent.com/justinh-rahb/v4l2-mpp/refs/heads/main/apps/v4l2-ctrls/v4l2-ctrls.py"
+REPO_SLUG="justinh-rahb/v4l2-ctrls"
+REPO_URL="https://github.com/${REPO_SLUG}"
+INSTALL_REF="${INSTALL_REF:-main}"
+ARCHIVE_URL="https://codeload.github.com/${REPO_SLUG}/tar.gz/${INSTALL_REF}"
 SERVICE_NAME="v4l2-ctrls"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 
@@ -67,19 +70,25 @@ else
     echo -e "${GREEN}✓ pip3 found${NC}"
 fi
 
-# Create installation directory
-echo -e "${GREEN}[4/7]${NC} Creating installation directory..."
-mkdir -p "$INSTALL_DIR"
-cd "$INSTALL_DIR"
+# Download latest release
+echo -e "${GREEN}[4/7]${NC} Downloading v4l2-ctrls (${INSTALL_REF})..."
+TMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TMP_DIR"' EXIT
+curl -sSL "$ARCHIVE_URL" -o "$TMP_DIR/v4l2-ctrls.tar.gz"
 
-# Download v4l2-ctrls.py
-echo -e "${GREEN}[5/7]${NC} Downloading v4l2-ctrls.py..."
-curl -sSL "$SCRIPT_URL" -o v4l2-ctrls.py
-chmod +x v4l2-ctrls.py
-echo -e "${GREEN}✓ Downloaded to ${INSTALL_DIR}/v4l2-ctrls.py${NC}"
+if [ -d "$INSTALL_DIR" ]; then
+    BACKUP_DIR="${INSTALL_DIR}.bak.$(date +%Y%m%d%H%M%S)"
+    echo -e "${YELLOW}Existing install found. Moving to ${BACKUP_DIR}${NC}"
+    mv "$INSTALL_DIR" "$BACKUP_DIR"
+fi
+
+mkdir -p "$INSTALL_DIR"
+tar -xzf "$TMP_DIR/v4l2-ctrls.tar.gz" -C "$INSTALL_DIR" --strip-components=1
+cd "$INSTALL_DIR"
+echo -e "${GREEN}✓ Downloaded to ${INSTALL_DIR}${NC}"
 
 # Create virtual environment
-echo -e "${GREEN}[6/7]${NC} Setting up Python virtual environment..."
+echo -e "${GREEN}[5/7]${NC} Setting up Python virtual environment..."
 if [ -d "venv" ]; then
     echo -e "${YELLOW}Removing existing venv...${NC}"
     rm -rf venv
@@ -88,19 +97,19 @@ fi
 python3 -m venv venv
 source venv/bin/activate
 
-# Install Flask
-echo -e "${GREEN}Installing Flask...${NC}"
+# Install requirements
+echo -e "${GREEN}Installing requirements...${NC}"
 pip install --upgrade pip
-pip install Flask
+pip install -r requirements.txt
 
 deactivate
-echo -e "${GREEN}✓ Virtual environment created and Flask installed${NC}"
+echo -e "${GREEN}✓ Virtual environment created and requirements installed${NC}"
 
 # Set ownership
 chown -R "$ACTUAL_USER:$ACTUAL_USER" "$INSTALL_DIR"
 
 # Create systemd service
-echo -e "${GREEN}[7/7]${NC} Creating systemd service..."
+echo -e "${GREEN}[6/7]${NC} Creating systemd service..."
 cat > "$SERVICE_FILE" << EOF
 [Unit]
 Description=V4L2 Controls
@@ -108,14 +117,15 @@ After=network.target
 
 [Service]
 Type=simple
-User=root
+User=${ACTUAL_USER}
+Group=${ACTUAL_USER}
 WorkingDirectory=${INSTALL_DIR}
 Environment="PATH=${INSTALL_DIR}/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ExecStart=${INSTALL_DIR}/venv/bin/python3 ${INSTALL_DIR}/v4l2-ctrls.py \\
   --device /dev/video0 \\
-  --camera-url "/webcam/" \\
-  --stream-path-mjpg "?action=stream" \\
-  --stream-path-snapshot "?action=snapshot" \\
+  --camera-url "http://klipper/webcam/" \\
+  --stream-path-mjpg "{prefix}?action=stream" \\
+  --stream-path-snapshot "{prefix}?action=snapshot" \\
   --host 0.0.0.0 \\
   --port 5000
 Restart=always
@@ -130,6 +140,7 @@ systemctl daemon-reload
 echo -e "${GREEN}✓ Service file created${NC}"
 
 # Enable and start service
+echo -e "${GREEN}[7/7]${NC} Finishing install...${NC}"
 echo ""
 echo -e "${YELLOW}Do you want to enable and start the service now? (y/n)${NC}"
 read -r response < /dev/tty
