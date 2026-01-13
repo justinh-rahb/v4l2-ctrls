@@ -126,6 +126,7 @@ ExecStart=${INSTALL_DIR}/venv/bin/python3 ${INSTALL_DIR}/v4l2-ctrls.py \\
   --camera-url "http://klipper/webcam/" \\
   --stream-path-mjpg "{prefix}?action=stream" \\
   --stream-path-snapshot "{prefix}?action=snapshot" \\
+  --state-dir /home/${ACTUAL_USER}/.config/v4l2-ctrls/camera \\
   --host 0.0.0.0 \\
   --port 5000
 Restart=always
