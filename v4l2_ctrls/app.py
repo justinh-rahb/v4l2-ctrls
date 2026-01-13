@@ -6,12 +6,14 @@ import argparse
 import json
 import os
 import sys
+from pathlib import Path
 from typing import Dict
 
 from flask import Flask
 
 from .camera import build_cams, detect_devices
 from .routes import register_routes
+from .state import restore_state
 from .utils import log, parse_stream_prefixes
 
 
@@ -115,6 +117,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--title", default="", help="Optional page title")
     parser.add_argument(
+        "--state-dir",
+        help="Optional directory to persist control state (per camera JSON files)",
+    )
+    parser.add_argument(
         "--stream-prefix",
         action="append",
         default=[],
@@ -180,6 +186,19 @@ def main(argv: list[str] | None = None) -> None:
         "port": port,
         "socket_mode": start_socket and not start_tcp,
     }
+
+    state_dir = None
+    if args.state_dir:
+        state_dir = Path(args.state_dir).expanduser()
+        state_dir.mkdir(parents=True, exist_ok=True)
+        config["state_dir"] = state_dir
+        for cam in cams:
+            state_path = state_dir / f"{cam.cam}.json"
+            log(f"Restoring persisted controls for {cam.cam} from {state_path}")
+            try:
+                restore_state(cam.device, state_path)
+            except Exception as exc:
+                log(f"Failed to restore persisted state for {cam.cam}: {exc}")
 
     app = create_app(config)
 

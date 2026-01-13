@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
-import json
 from typing import Dict, List, Tuple
 
 from flask import Blueprint, current_app, jsonify, render_template, request
 
-from .camera import parse_ctrl_menus, parse_ctrls, run_v4l2, sort_controls
-from .utils import build_storage_prefix, log
+from .camera import (
+    apply_controls,
+    fetch_controls,
+    run_v4l2,
+    split_controls_by_precedence,
+    validate_values,
+)
+from .state import load_state, save_state
+from .utils import build_storage_prefix
 
 bp = Blueprint("v4l2_ctrls", __name__)
 
@@ -65,27 +71,10 @@ def api_ctrls():
     if error:
         return error, code
 
-    code1, out1, err1 = run_v4l2(["v4l2-ctl", "-d", cam.device, "--list-ctrls"])
-    if code1 != 0:
-        return jsonify({"error": err1 or out1 or "Failed to list controls"}), 500
-    controls = parse_ctrls(out1)
-
-    code2, out2, err2 = run_v4l2(
-        ["v4l2-ctl", "-d", cam.device, "--list-ctrls-menus"]
-    )
-    if code2 == 0:
-        menus = parse_ctrl_menus(out2)
-        log(f"Found {len(menus)} controls with menus")
-        for ctrl in controls:
-            ctrl_name = ctrl["name"]
-            if ctrl_name in menus and menus[ctrl_name]:
-                ctrl["menu"] = menus[ctrl_name]
-                ctrl["type"] = "menu"
-                log(f"  {ctrl_name}: {len(menus[ctrl_name])} menu items")
-    else:
-        log(f"Failed to get menus: code={code2}, err={err2}")
-
-    controls = sort_controls(controls)
+    try:
+        controls = fetch_controls(cam.device)
+    except RuntimeError as exc:
+        return jsonify({"error": str(exc)}), 500
     return jsonify({"controls": controls})
 
 
@@ -99,53 +88,47 @@ def api_set():
     data = request.get_json(silent=True) or {}
     if not isinstance(data, dict):
         return jsonify({"error": "Invalid JSON body"}), 400
-    code1, out1, err1 = run_v4l2(["v4l2-ctl", "-d", cam.device, "--list-ctrls"])
-    if code1 != 0:
+    if not data:
+        return jsonify({"error": "No controls provided"}), 400
+    try:
+        controls = fetch_controls(cam.device, include_menus=False)
+        validated = validate_values(data, controls)
+    except RuntimeError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    auto_first, remaining = split_controls_by_precedence(validated)
+    ok, out, err, code = apply_controls(cam.device, auto_first)
+    if not ok:
         return (
-            jsonify({"ok": False, "stdout": out1, "stderr": err1, "code": code1}),
+            jsonify(
+                {
+                    "ok": False,
+                    "applied": validated,
+                    "stdout": out,
+                    "stderr": err,
+                    "code": code,
+                }
+            ),
             500,
         )
-    controls = parse_ctrls(out1)
-    allowlist = {ctrl["name"] for ctrl in controls}
-    control_map = {ctrl["name"]: ctrl for ctrl in controls}
-    applied: Dict[str, int] = {}
-    set_parts = []
-    for key, value in data.items():
-        if key not in allowlist:
-            return jsonify({"error": f"Unknown control: {key}"}), 400
-        if not isinstance(value, int):
-            return jsonify({"error": f"Value for {key} must be integer"}), 400
-        ctrl_def = control_map.get(key)
-        if ctrl_def:
-            min_val = ctrl_def.get("min")
-            max_val = ctrl_def.get("max")
-            if min_val is not None and max_val is not None:
-                if not (min_val <= value <= max_val):
-                    return (
-                        jsonify(
-                            {
-                                "error": (
-                                    f"{key}={value} out of range [{min_val}, {max_val}]"
-                                )
-                            }
-                        ),
-                        400,
-                    )
-        applied[key] = value
-        set_parts.append(f"{key}={value}")
-    if not set_parts:
-        return jsonify({"error": "No controls provided"}), 400
-    cmd = ["v4l2-ctl", "-d", cam.device, f"--set-ctrl={','.join(set_parts)}"]
-    code2, out2, err2 = run_v4l2(cmd)
-    ok = code2 == 0
+    ok, out, err, code = apply_controls(cam.device, remaining)
+    if ok:
+        state_dir = current_app.config.get("state_dir")
+        if state_dir:
+            state_path = state_dir / f"{cam.cam}.json"
+            persisted = load_state(state_path)
+            persisted.update(validated)
+            save_state(state_path, persisted)
     return (
         jsonify(
             {
                 "ok": ok,
-                "applied": applied,
-                "stdout": out2,
-                "stderr": err2,
-                "code": code2,
+                "applied": validated,
+                "stdout": out,
+                "stderr": err,
+                "code": code,
             }
         ),
         (200 if ok else 500),
@@ -179,7 +162,11 @@ def api_debug():
         ["v4l2-ctl", "-d", cam.device, "--list-ctrls-menus"]
     )
 
-    menus = parse_ctrl_menus(out2) if code2 == 0 else {}
+    menus = {}
+    if code2 == 0:
+        from .camera import parse_ctrl_menus
+
+        menus = parse_ctrl_menus(out2)
 
     return jsonify(
         {
