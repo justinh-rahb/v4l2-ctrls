@@ -12,6 +12,7 @@ Touch-friendly web UI for managing V4L2 camera controls with embedded video prev
 - Modern, colorful UI optimized for touch devices with light/dark theme support
 - Reverse proxy compatible with flexible URL configuration
 - LocalStorage persistence for user preferences (theme, camera selection, preview mode)
+- Optional persistence for camera control settings with safe restore order
 
 ## Requirements
 
@@ -75,6 +76,7 @@ Open the UI at `http://<host>:<port>/` (default: `http://127.0.0.1:5000/`).
 - `--camera-url <url>` - Base URL for camera streams (default: `http://127.0.0.1/`)
 - `--app-base-url <path>` - Base URL path for UI routing when behind a reverse proxy (optional)
 - `--title <text>` - Custom page title (optional)
+- `--state-dir <path>` - Optional directory to persist control state (per camera JSON files)
 - `--stream-prefix <key=path>` - Override stream prefix per camera (key can be device path, basename, or cam id)
 - `--stream-path-webrtc <template>` - Template for WebRTC stream path (default: `{prefix}webrtc`)
 - `--stream-path-mjpg <template>` - Template for MJPG stream path (default: `{prefix}stream.mjpg`)
