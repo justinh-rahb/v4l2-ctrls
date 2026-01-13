@@ -39,7 +39,11 @@
         </div>
       </div>
       <div class="preview" id="preview" style="margin-top:12px;"></div>
+      {% if persistence_enabled %}
+      <div class="note" style="color: rgb(141, 212, 255);">Control settings are persisted by the backend service.</div>
+      {% else %}
       <div class="note">Changes are not persisted; persistence is handled by the streamer/service.</div>
+      {% endif %}
     </section>
     <section class="panel">
       <div class="panel-header">

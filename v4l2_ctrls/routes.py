@@ -36,12 +36,14 @@ def index():
     port = current_app.config.get("port", 5000)
     socket_mode = current_app.config.get("socket_mode", False)
     storage_prefix = build_storage_prefix(app_base_url, port, socket_mode)
+    persistence_enabled = bool(current_app.config.get("state_dir"))
     return render_template(
         "index.html",
         title=title,
         camera_url=camera_url,
         app_base_url=app_base_url,
         storage_prefix=storage_prefix,
+        persistence_enabled=persistence_enabled,
     )
 
 
