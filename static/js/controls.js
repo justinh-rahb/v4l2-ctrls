@@ -248,7 +248,7 @@
     if (!response.ok || !data.ok) {
       throw new Error(data.stderr || data.error || 'Failed to apply controls');
     }
-    return { applied: true, data };
+    return { applied: true, data, payload };
   }
 
   window.V4L2Ctrls = {
