@@ -83,13 +83,37 @@
     return 'other';
   }
 
+  function checkModified(wrapper, control, currentValue) {
+    const defaultValue = control.default;
+    if (defaultValue !== null && defaultValue !== undefined && currentValue !== defaultValue) {
+      wrapper.classList.add('modified');
+    } else {
+      wrapper.classList.remove('modified');
+    }
+  }
+
   function buildControl(control, onChange) {
     const wrapper = document.createElement('div');
     wrapper.className = 'control';
+    wrapper.dataset.controlName = control.name;
     const title = document.createElement('div');
     title.className = 'control-title';
     title.textContent = control.name;
+    if (control.default !== null && control.default !== undefined) {
+      const badge = document.createElement('span');
+      badge.className = 'default-badge';
+      badge.textContent = ` [default: ${control.default}]`;
+      title.appendChild(badge);
+    }
+    if (control.readonly) {
+      const badge = document.createElement('span');
+      badge.className = 'default-badge';
+      badge.textContent = ' (read-only)';
+      title.appendChild(badge);
+      title.style.opacity = '0.6';
+    }
     wrapper.appendChild(title);
+    checkModified(wrapper, control, control.value);
 
     if (control.type === 'int') {
       const row = document.createElement('div');
@@ -102,6 +126,7 @@
       range.value = control.value;
       range.dataset.control = control.name;
       range.dataset.role = 'value';
+      range.disabled = control.readonly || false;
       const pill = document.createElement('div');
       pill.className = 'value-pill';
       pill.textContent = String(control.value);
@@ -113,14 +138,17 @@
       number.value = control.value;
       number.dataset.control = control.name;
       number.dataset.role = 'value';
+      number.disabled = control.readonly || false;
       range.addEventListener('input', () => {
         number.value = range.value;
         pill.textContent = range.value;
+        checkModified(wrapper, control, parseInt(range.value, 10));
       });
       range.addEventListener('change', onChange);
       number.addEventListener('input', () => {
         range.value = number.value;
         pill.textContent = number.value;
+        checkModified(wrapper, control, parseInt(number.value, 10));
       });
       number.addEventListener('change', onChange);
       row.appendChild(range);
@@ -131,20 +159,28 @@
       const select = document.createElement('select');
       select.dataset.control = control.name;
       select.dataset.role = 'value';
+      select.disabled = control.readonly || false;
       select.add(new Option('Off', '0'));
       select.add(new Option('On', '1'));
       select.value = String(control.value || 0);
-      select.addEventListener('change', onChange);
+      select.addEventListener('change', () => {
+        checkModified(wrapper, control, parseInt(select.value, 10));
+        onChange();
+      });
       wrapper.appendChild(select);
     } else if (control.type === 'menu') {
       const select = document.createElement('select');
       select.dataset.control = control.name;
       select.dataset.role = 'value';
+      select.disabled = control.readonly || false;
       (control.menu || []).forEach((item) => {
         select.add(new Option(item.label, String(item.value)));
       });
       select.value = String(control.value || 0);
-      select.addEventListener('change', onChange);
+      select.addEventListener('change', () => {
+        checkModified(wrapper, control, parseInt(select.value, 10));
+        onChange();
+      });
       wrapper.appendChild(select);
     } else {
       const span = document.createElement('div');
@@ -225,6 +261,9 @@
     const payload = {};
     const previous = controlMap(lastControls);
     controlsContainer.querySelectorAll('[data-control][data-role="value"]').forEach((el) => {
+      if (el.disabled) {
+        return;
+      }
       const name = el.dataset.control;
       const parsed = parseInt(el.value, 10);
       if (Number.isNaN(parsed)) {
@@ -246,7 +285,10 @@
     });
     const data = await response.json();
     if (!response.ok || !data.ok) {
-      throw new Error(data.stderr || data.error || 'Failed to apply controls');
+      const error = new Error(data.stderr || data.error || 'Failed to apply controls');
+      error.payload = payload;
+      error.failed = data.failed || [];
+      throw error;
     }
     return { applied: true, data, payload };
   }

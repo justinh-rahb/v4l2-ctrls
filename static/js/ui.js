@@ -87,6 +87,40 @@
     }, 500);
   }
 
+  function resetControlToDefault(controlName) {
+    const ctrl = currentControls.find((control) => control.name === controlName);
+    if (!ctrl || ctrl.default === null || ctrl.default === undefined) {
+      return;
+    }
+    const elements = controlsContainer.querySelectorAll(
+      `[data-control="${controlName}"][data-role="value"]`,
+    );
+    elements.forEach((el) => {
+      el.value = String(ctrl.default);
+      if (el.type === 'range') {
+        const wrapper = el.closest('.control');
+        const pill = wrapper.querySelector('.value-pill');
+        if (pill) {
+          pill.textContent = String(ctrl.default);
+        }
+        const number = wrapper.querySelector('input[type="number"]');
+        if (number) {
+          number.value = String(ctrl.default);
+        }
+      }
+      const wrapper = el.closest('.control');
+      if (wrapper) {
+        const defaultValue = ctrl.default;
+        const currentValue = ctrl.default;
+        if (defaultValue !== null && defaultValue !== undefined && currentValue !== defaultValue) {
+          wrapper.classList.add('modified');
+        } else {
+          wrapper.classList.remove('modified');
+        }
+      }
+    });
+  }
+
   async function applyChanges() {
     const cam = cameraSelect.value;
     applyButton.disabled = true;
@@ -118,6 +152,9 @@
       }
     } catch (err) {
       logStatus(`Error: ${err.message}`);
+      const payload = err.payload || {};
+      Object.keys(payload).forEach((name) => resetControlToDefault(name));
+      await loadControls(cam, true);
     } finally {
       applyButton.disabled = false;
     }
@@ -185,13 +222,40 @@
     await loadInfo(cameraSelect.value);
   });
   applyButton.addEventListener('click', applyChanges);
-  resetButton.addEventListener('click', () => {
-    if (!lastControls.length) {
-      logStatus('No controls to reset.');
-      return;
+  resetButton.addEventListener('click', async () => {
+    resetButton.disabled = true;
+    try {
+      logStatus('Resetting controls to defaults...');
+      const cam = cameraSelect.value;
+      const response = await fetch(
+        window.V4L2Ctrls.apiUrl(`api/v4l2/reset?cam=${encodeURIComponent(cam)}`),
+        {
+          method: 'POST',
+        },
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to reset controls');
+      }
+      const succeeded = data.succeeded || [];
+      const failed = data.failed || [];
+      let message = `Reset: ${succeeded.length} succeeded, ${failed.length} failed. State: ${
+        data.state_removed ? 'removed' : 'not found'
+      }.`;
+      if (failed.length > 0) {
+        message += '\n\nFailed:';
+        failed.forEach((entry) => {
+          const err = entry.error.replace(/^.*:\s*/, '').replace(/\s+/g, ' ').trim();
+          message += `\n  ${entry.name}: ${err}`;
+        });
+      }
+      logStatus(message);
+      await loadControls(cam, true);
+    } catch (err) {
+      logStatus(`Error: ${err.message}`);
+    } finally {
+      resetButton.disabled = false;
     }
-    renderControls(controlsContainer, lastControls, scheduleAutoApply);
-    logStatus('Reset to last loaded values.');
   });
 
   init().catch((err) => {
