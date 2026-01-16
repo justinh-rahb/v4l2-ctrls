@@ -130,6 +130,13 @@ def parse_ctrls(output: str) -> List[Dict]:
         ctrl_type = None
         if type_start != -1 and type_end != -1:
             ctrl_type = line[type_start + 1 : type_end].strip()
+        flags_index = line.find("flags=")
+        read_only = False
+        inactive = False
+        if flags_index != -1:
+            flags_part = line[flags_index + 6 :]
+            read_only = "read-only" in flags_part
+            inactive = "inactive" in flags_part
         controls.append(
             {
                 "name": name,
@@ -137,7 +144,10 @@ def parse_ctrls(output: str) -> List[Dict]:
                 "min": get_int_from_parts(parts, "min"),
                 "max": get_int_from_parts(parts, "max"),
                 "step": get_int_from_parts(parts, "step"),
+                "default": get_int_from_parts(parts, "default"),
                 "value": get_int_from_parts(parts, "value"),
+                "readonly": read_only,
+                "inactive": inactive,
                 "menu": [],
             }
         )
@@ -224,11 +234,14 @@ def validate_values(values: Dict[str, int], controls: List[Dict]) -> Dict[str, i
     for key, value in values.items():
         if key not in allowlist:
             raise ValueError(f"Unknown control: {key}")
+        ctrl_def = control_map.get(key)
+        if ctrl_def and ctrl_def.get("readonly"):
+            log(f"Skipping read-only control: {key}")
+            continue
         if isinstance(value, bool):
             value = int(value)
         if not isinstance(value, int):
             raise ValueError(f"Value for {key} must be integer")
-        ctrl_def = control_map.get(key)
         if ctrl_def:
             min_val = ctrl_def.get("min")
             max_val = ctrl_def.get("max")
@@ -255,6 +268,12 @@ def split_controls_by_precedence(
     auto_first = {key: value for key, value in values.items() if key in AUTO_FIRST_CONTROLS}
     remaining = {key: value for key, value in values.items() if key not in AUTO_FIRST_CONTROLS}
     return auto_first, remaining
+
+
+def order_controls_by_precedence(values: Dict[str, int]) -> List[Tuple[str, int]]:
+    items = list(values.items())
+    items.sort(key=lambda item: (0 if item[0] in AUTO_FIRST_CONTROLS else 1, item[0]))
+    return items
 
 
 def infer_default_prefix(device: str, idx: int, use_default_mapping: bool = True) -> str:

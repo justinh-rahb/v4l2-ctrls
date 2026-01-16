@@ -181,9 +181,19 @@ button:disabled {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
 }
 
+.control.modified {
+  border-left: 3px solid var(--accent);
+}
+
 .control-title {
   font-size: 14px;
   margin-bottom: 6px;
+}
+
+.control-title .default-badge {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: normal;
 }
 
 .control-grid {

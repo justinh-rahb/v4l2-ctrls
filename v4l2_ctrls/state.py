@@ -7,7 +7,12 @@ import os
 from pathlib import Path
 from typing import Dict
 
-from .camera import apply_controls, fetch_controls, split_controls_by_precedence, validate_values
+from .camera import (
+    apply_controls,
+    fetch_controls,
+    order_controls_by_precedence,
+    validate_values,
+)
 from .utils import log
 
 
@@ -44,13 +49,16 @@ def restore_state(device: str, path: Path) -> None:
     if not validated:
         log("No valid persisted controls to apply")
         return
-    auto_first, remaining = split_controls_by_precedence(validated)
-    ok, out, err, code = apply_controls(device, auto_first)
-    if not ok:
-        log(f"Failed to restore auto controls: code={code}, err={err or out}")
-        return
-    ok, out, err, code = apply_controls(device, remaining)
-    if ok:
-        log(f"Restored {len(validated)} controls from {path}")
-    else:
-        log(f"Failed to restore controls: code={code}, err={err or out}")
+    succeeded = []
+    failed = []
+    for name, value in order_controls_by_precedence(validated):
+        ok, out, err, _code = apply_controls(device, {name: value})
+        if ok:
+            succeeded.append(name)
+        else:
+            failed.append(name)
+            log(f"Failed to restore {name}: {err or out}")
+    if succeeded:
+        log(f"Restored {len(succeeded)} controls from {path}")
+    if failed:
+        log(f"Failed to restore {len(failed)} controls: {', '.join(failed)}")
