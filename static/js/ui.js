@@ -6,6 +6,7 @@
     fetchInfo,
     renderControls,
     applyControlChanges,
+    controlMap,
   } = window.V4L2Ctrls;
 
   const cameraUrlInput = document.getElementById('camera-url');
@@ -64,6 +65,16 @@
     localStorage.setItem(storageKey('cam'), cam);
   }
 
+  function updateControlValues(values) {
+    const byName = controlMap(currentControls);
+    Object.entries(values).forEach(([name, value]) => {
+      if (byName[name]) {
+        byName[name].value = value;
+      }
+    });
+    lastControls = JSON.parse(JSON.stringify(currentControls));
+  }
+
   function scheduleAutoApply() {
     if (!autoApplyCheckbox.checked) {
       return;
@@ -88,9 +99,13 @@
       logStatus(
         `Applied: ${JSON.stringify(result.data.applied, null, 2)}\n${result.data.stdout || ''}`.trim(),
       );
-      currentControls = await fetchControls(cam, { silent: true });
-      lastControls = JSON.parse(JSON.stringify(currentControls));
-      renderControls(controlsContainer, currentControls, scheduleAutoApply);
+      if (autoApplyCheckbox.checked) {
+        updateControlValues(result.payload);
+      } else {
+        currentControls = await fetchControls(cam, { silent: true });
+        lastControls = JSON.parse(JSON.stringify(currentControls));
+        renderControls(controlsContainer, currentControls, scheduleAutoApply);
+      }
       if (previewMode.value === 'snapshot') {
         updatePreview();
       } else {
