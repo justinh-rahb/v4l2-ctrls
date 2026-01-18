@@ -99,19 +99,47 @@
       font-weight: 700;
     }
 
-    .theme-toggle {
-      padding: 8px 16px;
-      border-radius: 8px;
-      background: var(--panel-strong);
-      color: var(--text);
-      border: 1px solid var(--border);
-      cursor: pointer;
-      font-size: 14px;
-      transition: transform 0.1s ease;
+    .header-icons {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
+    .icon-link,
+    .theme-toggle {
+      padding: 8px;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+
+    .icon-link:hover,
     .theme-toggle:hover {
+      background: var(--panel-strong);
       transform: translateY(-1px);
+    }
+
+    .theme-icon {
+      display: none;
+    }
+
+    .sun-icon {
+      display: block;
+    }
+
+    [data-theme="light"] .sun-icon {
+      display: none;
+    }
+
+    [data-theme="light"] .moon-icon {
+      display: block;
     }
 
     .hero {
@@ -361,6 +389,11 @@
       margin-right: 8px;
     }
 
+    .screenshot-container {
+      margin: 40px 0;
+      text-align: center;
+    }
+
     .screenshot {
       width: 100%;
       max-width: 100%;
@@ -368,7 +401,52 @@
       border-radius: 12px;
       box-shadow: var(--shadow);
       border: 1px solid var(--border);
-      margin: 20px 0;
+      display: none;
+    }
+
+    .screenshot-light.active {
+      display: block;
+    }
+
+    .screenshot-dark.active {
+      display: block;
+    }
+
+    .screenshot-controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .pip-label {
+      cursor: pointer;
+    }
+
+    .pip-input {
+      display: none;
+    }
+
+    .pip {
+      display: block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: all 0.3s ease;
+    }
+
+    .pip-input:checked + .pip {
+      background: var(--accent);
+      transform: scale(1.3);
+    }
+
+    .pip-label:hover .pip {
+      background: var(--muted);
+    }
+
+    .pip-input:checked + .pip:hover {
+      background: var(--accent-strong);
     }
   </style>
 </head>
@@ -376,7 +454,21 @@
   <header>
     <div class="container">
       <h1>V4L2 Controls</h1>
-      <button class="theme-toggle" onclick="toggleTheme()">Theme</button>
+      <div class="header-icons">
+        <a href="https://github.com/justinh-rahb/v4l2-ctrls" class="icon-link" aria-label="View on GitHub">
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+        </a>
+        <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+          <svg class="theme-icon sun-icon" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+          </svg>
+          <svg class="theme-icon moon-icon" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278zM4.858 1.311A7.269 7.269 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.316 7.316 0 0 0 5.205-2.162c-.337.042-.68.063-1.029.063-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286z"/>
+          </svg>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -396,8 +488,19 @@
       </a>
     </div>
 
-    <div class="section">
-      <img src="screenshot.png" alt="V4L2-Ctrls User Interface" class="screenshot">
+    <div class="screenshot-container">
+      <img src="screenshot_light.png" alt="V4L2 Controls User Interface - Light Theme" class="screenshot screenshot-light">
+      <img src="screenshot_dark.png" alt="V4L2 Controls User Interface - Dark Theme" class="screenshot screenshot-dark">
+      <div class="screenshot-controls">
+        <label class="pip-label">
+          <input type="radio" name="screenshot-toggle" value="light" class="pip-input">
+          <span class="pip"></span>
+        </label>
+        <label class="pip-label">
+          <input type="radio" name="screenshot-toggle" value="dark" class="pip-input">
+          <span class="pip"></span>
+        </label>
+      </div>
     </div>
 
     <div class="section">
@@ -579,6 +682,24 @@ python3 v4l2-ctrls.py --device /dev/video0 --camera-url <span class="string">"ht
   </footer>
 
   <script>
+    // Screenshot switching functionality
+    function updateScreenshot(variant) {
+      const lightScreenshot = document.querySelector('.screenshot-light');
+      const darkScreenshot = document.querySelector('.screenshot-dark');
+      const lightRadio = document.querySelector('input[value="light"]');
+      const darkRadio = document.querySelector('input[value="dark"]');
+
+      if (variant === 'light') {
+        lightScreenshot.classList.add('active');
+        darkScreenshot.classList.remove('active');
+        lightRadio.checked = true;
+      } else {
+        darkScreenshot.classList.add('active');
+        lightScreenshot.classList.remove('active');
+        darkRadio.checked = true;
+      }
+    }
+
     // Theme toggle functionality
     function toggleTheme() {
       const html = document.documentElement;
@@ -586,24 +707,38 @@ python3 v4l2-ctrls.py --device /dev/video0 --camera-url <span class="string">"ht
       const newTheme = currentTheme === 'light' ? 'dark' : 'light';
       html.setAttribute('data-theme', newTheme);
       localStorage.setItem('theme', newTheme);
+      // Update screenshot to match new theme
+      updateScreenshot(newTheme);
     }
+
+    // Handle manual screenshot switching
+    document.querySelectorAll('input[name="screenshot-toggle"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        updateScreenshot(e.target.value);
+      });
+    });
 
     // Load saved theme
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme) {
       document.documentElement.setAttribute('data-theme', savedTheme);
+      updateScreenshot(savedTheme);
     } else {
       // Default to system preference
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const defaultTheme = prefersDark ? 'dark' : 'light';
       if (!prefersDark) {
         document.documentElement.setAttribute('data-theme', 'light');
       }
+      updateScreenshot(defaultTheme);
     }
 
     // Listen for system theme changes
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
       if (!localStorage.getItem('theme')) {
-        document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+        const newTheme = e.matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        updateScreenshot(newTheme);
       }
     });
   </script>
