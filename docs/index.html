@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Touch-friendly web UI for managing V4L2 camera controls with embedded video preview">
+  <title>v4l2-ctrls - Installation Guide</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f1115;
+      --panel: #1b1f2a;
+      --panel-strong: #222838;
+      --tile: #1c2230;
+      --accent: #63b3ff;
+      --accent-strong: #4ea1ff;
+      --text: #e6e9ef;
+      --muted: #9aa3b2;
+      --border: #2b3040;
+      --shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+      --gradient: linear-gradient(145deg, rgba(78, 161, 255, 0.12), rgba(0, 0, 0, 0));
+      --hero-gradient: linear-gradient(135deg, rgba(78, 161, 255, 0.2), rgba(147, 51, 234, 0.15));
+    }
+
+    [data-theme="light"] {
+      color-scheme: light;
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --panel-strong: #f0f2f7;
+      --tile: #ffffff;
+      --accent: #3d7bff;
+      --accent-strong: #2f62d8;
+      --text: #1a1f2b;
+      --muted: #5c677d;
+      --border: #e3e6ef;
+      --shadow: 0 12px 30px rgba(30, 46, 90, 0.12);
+      --gradient: linear-gradient(145deg, rgba(61, 123, 255, 0.1), rgba(255, 255, 255, 0));
+      --hero-gradient: linear-gradient(135deg, rgba(61, 123, 255, 0.15), rgba(147, 51, 234, 0.1));
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    header {
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    header .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .theme-toggle {
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: var(--panel-strong);
+      color: var(--text);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.1s ease;
+    }
+
+    .theme-toggle:hover {
+      transform: translateY(-1px);
+    }
+
+    .hero {
+      background: var(--panel);
+      background-image: var(--hero-gradient);
+      border-radius: 20px;
+      padding: 60px 40px;
+      margin: 40px 0;
+      text-align: center;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .hero h2 {
+      margin: 0 0 16px;
+      font-size: 42px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent-strong), #9333ea);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      margin: 0 0 32px;
+      font-size: 18px;
+      color: var(--muted);
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero .install-command {
+      background: var(--tile);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 15px;
+      text-align: left;
+      max-width: 700px;
+      margin: 0 auto 20px;
+      position: relative;
+      overflow-x: auto;
+    }
+
+    .hero .install-command code {
+      color: var(--accent);
+      display: block;
+      white-space: nowrap;
+    }
+
+    .github-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: var(--accent);
+      color: #0b1020;
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: transform 0.1s ease, box-shadow 0.2s ease;
+      margin-top: 12px;
+    }
+
+    .github-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(78, 161, 255, 0.3);
+    }
+
+    .section {
+      background: var(--panel);
+      border-radius: 16px;
+      padding: 32px;
+      margin: 24px 0;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .section h3 {
+      margin-top: 0;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .section h4 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    .code-block {
+      background: var(--tile);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 14px;
+      overflow-x: auto;
+      margin: 12px 0;
+    }
+
+    .code-block code {
+      color: var(--accent);
+    }
+
+    .steps {
+      list-style: none;
+      padding: 0;
+      counter-reset: step-counter;
+    }
+
+    .steps li {
+      counter-increment: step-counter;
+      position: relative;
+      padding-left: 48px;
+      margin: 20px 0;
+    }
+
+    .steps li::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      color: #0b1020;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .note {
+      background: var(--panel-strong);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+
+    .note strong {
+      color: var(--accent-strong);
+    }
+
+    .command-grid {
+      display: grid;
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .command-item {
+      background: var(--tile);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .command-item code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 14px;
+      color: var(--accent);
+    }
+
+    .command-item .description {
+      font-size: 13px;
+      color: var(--muted);
+      grid-column: 1 / -1;
+    }
+
+    footer {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+      font-size: 14px;
+      border-top: 1px solid var(--border);
+      margin-top: 60px;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .hero {
+        padding: 40px 24px;
+      }
+
+      .hero h2 {
+        font-size: 32px;
+      }
+
+      .hero p {
+        font-size: 16px;
+      }
+
+      .section {
+        padding: 24px 20px;
+      }
+
+      .hero .install-command {
+        font-size: 13px;
+        padding: 16px 18px;
+      }
+    }
+
+    .checkmark {
+      color: #4ade80;
+      margin-right: 8px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>v4l2-ctrls</h1>
+      <button class="theme-toggle" onclick="toggleTheme()">Toggle Theme</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="hero">
+      <h2>Installation Guide</h2>
+      <p>Touch-friendly web UI for managing V4L2 camera controls with embedded video preview</p>
+
+      <div class="install-command">
+        <code>curl -sSL https://raw.githubusercontent.com/justinh-rahb/v4l2-ctrls/main/install.sh | sudo bash</code>
+      </div>
+
+      <a href="https://github.com/justinh-rahb/v4l2-ctrls" class="github-link">
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        View on GitHub
+      </a>
+    </div>
+
+    <div class="section">
+      <h3>One-Line Install</h3>
+      <p>The easiest way to get started is with the automated installer script:</p>
+
+      <div class="code-block">
+        <code>curl -sSL https://raw.githubusercontent.com/justinh-rahb/v4l2-ctrls/main/install.sh | sudo bash</code>
+      </div>
+
+      <p>To install a different branch, tag, or commit, set <code>INSTALL_REF</code>:</p>
+
+      <div class="code-block">
+        <code>curl -sSL https://raw.githubusercontent.com/justinh-rahb/v4l2-ctrls/main/install.sh | sudo INSTALL_REF=feature-branch bash</code>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>What the Installer Does</h3>
+      <ul class="steps">
+        <li><span class="checkmark">✅</span> Ensures <code>v4l2-ctl</code> is available (installs <code>v4l-utils</code> if needed)</li>
+        <li><span class="checkmark">✅</span> Verifies Python 3 and pip (installs <code>python3-pip</code> + <code>python3-venv</code> if missing)</li>
+        <li><span class="checkmark">✅</span> Downloads the <code>INSTALL_REF</code> archive to <code>~/v4l2-ctrls</code> (backs up any existing install)</li>
+        <li><span class="checkmark">✅</span> Creates a Python virtual environment and installs requirements</li>
+        <li><span class="checkmark">✅</span> Creates a systemd service for the current sudo user</li>
+        <li><span class="checkmark">✅</span> Prompts to enable/start the service</li>
+      </ul>
+
+      <div class="note">
+        <strong>Note:</strong> The installer must be run as root. It uses the sudo user to determine the install path and service user.
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Defaults Created by the Installer</h3>
+      <ul>
+        <li><strong>Install path:</strong> <code>/home/&lt;user&gt;/v4l2-ctrls</code></li>
+        <li><strong>Service:</strong> <code>/etc/systemd/system/v4l2-ctrls.service</code></li>
+        <li><strong>Bind address:</strong> <code>0.0.0.0</code></li>
+        <li><strong>Port:</strong> <code>5000</code></li>
+        <li><strong>Camera URL:</strong> <code>http://127.0.0.1/</code> (app default)</li>
+        <li><strong>Stream paths</strong> (app defaults):
+          <ul>
+            <li>MJPG: <code>{prefix}stream.mjpg</code></li>
+            <li>Snapshot: <code>{prefix}snapshot.jpg</code></li>
+            <li>WebRTC: <code>{prefix}webrtc</code></li>
+          </ul>
+        </li>
+      </ul>
+
+      <p>Access the UI after install:</p>
+      <div class="code-block">
+        <code>http://&lt;your-pi-ip&gt;:5000</code>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Customize the Service</h3>
+      <p>Edit the service file to customize your installation:</p>
+
+      <div class="code-block">
+        <code>sudo nano /etc/systemd/system/v4l2-ctrls.service</code>
+      </div>
+
+      <h4>Example with Custom Device and Stream URLs</h4>
+      <div class="code-block">
+        <code>[Unit]
+Description=V4L2 Camera Controls Web Interface
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/v4l2-ctrls
+ExecStart=/home/pi/v4l2-ctrls/venv/bin/python3 /home/pi/v4l2-ctrls/v4l2-ctrls.py \
+  --device /dev/video2 \
+  --camera-url "http://10.0.3.229:8081/" \
+  --stream-path-mjpg "{prefix}?action=stream" \
+  --stream-path-snapshot "{prefix}?action=snapshot" \
+  --host 0.0.0.0 \
+  --port 5000
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target</code>
+      </div>
+
+      <h4>Common MainsailOS/FluiddPi Streamer Defaults</h4>
+      <p>If you're using the standard MainsailOS/FluiddPi webcam endpoints (often via crowsnest), these settings are typical:</p>
+
+      <div class="code-block">
+        <code>ExecStart=/home/pi/v4l2-ctrls/venv/bin/python3 /home/pi/v4l2-ctrls/v4l2-ctrls.py \
+  --camera-url "http://127.0.0.1/" \
+  --stream-prefix /dev/video0=/webcam/ \
+  --stream-path-mjpg "{prefix}?action=stream" \
+  --stream-path-snapshot "{prefix}?action=snapshot" \
+  --host 0.0.0.0 \
+  --port 5000</code>
+      </div>
+
+      <p>After making changes, reload and restart:</p>
+      <div class="code-block">
+        <code>sudo systemctl daemon-reload
+sudo systemctl restart v4l2-ctrls</code>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Managing the Service</h3>
+      <div class="command-grid">
+        <div class="command-item">
+          <code>sudo systemctl status v4l2-ctrls</code>
+          <div class="description">Check service status</div>
+        </div>
+        <div class="command-item">
+          <code>sudo journalctl -u v4l2-ctrls -f</code>
+          <div class="description">View live logs</div>
+        </div>
+        <div class="command-item">
+          <code>sudo systemctl restart v4l2-ctrls</code>
+          <div class="description">Restart the service</div>
+        </div>
+        <div class="command-item">
+          <code>sudo systemctl stop v4l2-ctrls</code>
+          <div class="description">Stop the service</div>
+        </div>
+        <div class="command-item">
+          <code>sudo systemctl start v4l2-ctrls</code>
+          <div class="description">Start the service</div>
+        </div>
+        <div class="command-item">
+          <code>sudo systemctl disable v4l2-ctrls</code>
+          <div class="description">Disable auto-start on boot</div>
+        </div>
+        <div class="command-item">
+          <code>sudo systemctl enable v4l2-ctrls</code>
+          <div class="description">Enable auto-start on boot</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Uninstall</h3>
+      <div class="code-block">
+        <code>sudo systemctl stop v4l2-ctrls
+sudo systemctl disable v4l2-ctrls
+sudo rm /etc/systemd/system/v4l2-ctrls.service
+sudo rm -rf /home/&lt;user&gt;/v4l2-ctrls
+sudo systemctl daemon-reload</code>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Troubleshooting</h3>
+
+      <h4>Service Won't Start</h4>
+      <div class="code-block">
+        <code># Check logs
+sudo journalctl -u v4l2-ctrls -n 50
+
+# Check if device exists
+ls -la /dev/video*
+
+# Test manually
+cd /home/&lt;user&gt;/v4l2-ctrls
+source venv/bin/activate
+python3 v4l2-ctrls.py --device /dev/video0 --camera-url "http://127.0.0.1/"</code>
+      </div>
+
+      <h4>Camera Preview Not Working</h4>
+      <ol>
+        <li>Make sure your camera streamer is running.</li>
+        <li>Check the camera URL in the web UI matches your setup.</li>
+        <li>Test the URLs directly in a browser (use your configured base URL/prefix):
+          <ul>
+            <li>MJPG: <code>http://your-pi-ip/stream.mjpg</code></li>
+            <li>Snapshot: <code>http://your-pi-ip/snapshot.jpg</code></li>
+          </ul>
+        </li>
+      </ol>
+
+      <h4>Port 5000 Already in Use</h4>
+      <p>Change the port in the service file to something else (e.g., 5001):</p>
+      <div class="code-block">
+        <code>sudo nano /etc/systemd/system/v4l2-ctrls.service
+# Change --port 5000 to --port 5001
+sudo systemctl daemon-reload
+sudo systemctl restart v4l2-ctrls</code>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>
+      Made with ❤️ for the V4L2 community |
+      <a href="https://github.com/justinh-rahb/v4l2-ctrls">GitHub</a> |
+      <a href="https://github.com/justinh-rahb/v4l2-ctrls/blob/main/LICENSE">MIT License</a>
+    </p>
+  </footer>
+
+  <script>
+    // Theme toggle functionality
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+    }
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    } else {
+      // Default to system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (!prefersDark) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    }
+
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      if (!localStorage.getItem('theme')) {
+        document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+      }
+    });
+  </script>
+</body>
+</html>
