@@ -389,6 +389,11 @@
       margin-right: 8px;
     }
 
+    .screenshot-container {
+      margin: 40px 0;
+      text-align: center;
+    }
+
     .screenshot {
       width: 100%;
       max-width: 100%;
@@ -396,23 +401,52 @@
       border-radius: 12px;
       box-shadow: var(--shadow);
       border: 1px solid var(--border);
-      margin: 20px 0;
-    }
-
-    .screenshot-light {
       display: none;
     }
 
-    .screenshot-dark {
+    .screenshot-light.active {
       display: block;
     }
 
-    [data-theme="light"] .screenshot-light {
+    .screenshot-dark.active {
       display: block;
     }
 
-    [data-theme="light"] .screenshot-dark {
+    .screenshot-controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .pip-label {
+      cursor: pointer;
+    }
+
+    .pip-input {
       display: none;
+    }
+
+    .pip {
+      display: block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: all 0.3s ease;
+    }
+
+    .pip-input:checked + .pip {
+      background: var(--accent);
+      transform: scale(1.3);
+    }
+
+    .pip-label:hover .pip {
+      background: var(--muted);
+    }
+
+    .pip-input:checked + .pip:hover {
+      background: var(--accent-strong);
     }
   </style>
 </head>
@@ -454,9 +488,19 @@
       </a>
     </div>
 
-    <div class="section">
+    <div class="screenshot-container">
       <img src="screenshot_light.png" alt="V4L2 Controls User Interface - Light Theme" class="screenshot screenshot-light">
       <img src="screenshot_dark.png" alt="V4L2 Controls User Interface - Dark Theme" class="screenshot screenshot-dark">
+      <div class="screenshot-controls">
+        <label class="pip-label">
+          <input type="radio" name="screenshot-toggle" value="light" class="pip-input">
+          <span class="pip"></span>
+        </label>
+        <label class="pip-label">
+          <input type="radio" name="screenshot-toggle" value="dark" class="pip-input">
+          <span class="pip"></span>
+        </label>
+      </div>
     </div>
 
     <div class="section">
@@ -638,6 +682,24 @@ python3 v4l2-ctrls.py --device /dev/video0 --camera-url <span class="string">"ht
   </footer>
 
   <script>
+    // Screenshot switching functionality
+    function updateScreenshot(variant) {
+      const lightScreenshot = document.querySelector('.screenshot-light');
+      const darkScreenshot = document.querySelector('.screenshot-dark');
+      const lightRadio = document.querySelector('input[value="light"]');
+      const darkRadio = document.querySelector('input[value="dark"]');
+
+      if (variant === 'light') {
+        lightScreenshot.classList.add('active');
+        darkScreenshot.classList.remove('active');
+        lightRadio.checked = true;
+      } else {
+        darkScreenshot.classList.add('active');
+        lightScreenshot.classList.remove('active');
+        darkRadio.checked = true;
+      }
+    }
+
     // Theme toggle functionality
     function toggleTheme() {
       const html = document.documentElement;
@@ -645,24 +707,38 @@ python3 v4l2-ctrls.py --device /dev/video0 --camera-url <span class="string">"ht
       const newTheme = currentTheme === 'light' ? 'dark' : 'light';
       html.setAttribute('data-theme', newTheme);
       localStorage.setItem('theme', newTheme);
+      // Update screenshot to match new theme
+      updateScreenshot(newTheme);
     }
+
+    // Handle manual screenshot switching
+    document.querySelectorAll('input[name="screenshot-toggle"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        updateScreenshot(e.target.value);
+      });
+    });
 
     // Load saved theme
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme) {
       document.documentElement.setAttribute('data-theme', savedTheme);
+      updateScreenshot(savedTheme);
     } else {
       // Default to system preference
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const defaultTheme = prefersDark ? 'dark' : 'light';
       if (!prefersDark) {
         document.documentElement.setAttribute('data-theme', 'light');
       }
+      updateScreenshot(defaultTheme);
     }
 
     // Listen for system theme changes
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
       if (!localStorage.getItem('theme')) {
-        document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+        const newTheme = e.matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        updateScreenshot(newTheme);
       }
     });
   </script>
