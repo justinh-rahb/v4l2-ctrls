@@ -319,6 +319,16 @@
       color: #4ade80;
       margin-right: 8px;
     }
+
+    .screenshot {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      margin: 20px 0;
+    }
   </style>
 </head>
 <body>
@@ -344,6 +354,10 @@
         </svg>
         View on GitHub
       </a>
+    </div>
+
+    <div class="section">
+      <img src="screenshot.png" alt="V4L2-Ctrls User Interface" class="screenshot">
     </div>
 
     <div class="section">
@@ -454,35 +468,14 @@ sudo systemctl restart v4l2-ctrls</code>
 
     <div class="section">
       <h3>Managing the Service</h3>
-      <div class="command-grid">
-        <div class="command-item">
-          <code>sudo systemctl status v4l2-ctrls</code>
-          <div class="description">Check service status</div>
-        </div>
-        <div class="command-item">
-          <code>sudo journalctl -u v4l2-ctrls -f</code>
-          <div class="description">View live logs</div>
-        </div>
-        <div class="command-item">
-          <code>sudo systemctl restart v4l2-ctrls</code>
-          <div class="description">Restart the service</div>
-        </div>
-        <div class="command-item">
-          <code>sudo systemctl stop v4l2-ctrls</code>
-          <div class="description">Stop the service</div>
-        </div>
-        <div class="command-item">
-          <code>sudo systemctl start v4l2-ctrls</code>
-          <div class="description">Start the service</div>
-        </div>
-        <div class="command-item">
-          <code>sudo systemctl disable v4l2-ctrls</code>
-          <div class="description">Disable auto-start on boot</div>
-        </div>
-        <div class="command-item">
-          <code>sudo systemctl enable v4l2-ctrls</code>
-          <div class="description">Enable auto-start on boot</div>
-        </div>
+      <div class="code-block">
+        <code>sudo systemctl status v4l2-ctrls
+sudo journalctl -u v4l2-ctrls -f
+sudo systemctl restart v4l2-ctrls
+sudo systemctl stop v4l2-ctrls
+sudo systemctl start v4l2-ctrls
+sudo systemctl disable v4l2-ctrls
+sudo systemctl enable v4l2-ctrls</code>
       </div>
     </div>
 
