@@ -38,6 +38,26 @@
       --hero-gradient: linear-gradient(135deg, rgba(61, 123, 255, 0.15), rgba(147, 51, 234, 0.1));
     }
 
+    [data-theme="light"] .code-block code {
+      color: #2e3440;
+    }
+
+    [data-theme="light"] .code-block .keyword {
+      color: #7c3aed;
+    }
+
+    [data-theme="light"] .code-block .string {
+      color: #059669;
+    }
+
+    [data-theme="light"] .code-block .comment {
+      color: #6b7280;
+    }
+
+    [data-theme="light"] .code-block .command {
+      color: #2563eb;
+    }
+
     * {
       box-sizing: border-box;
     }
@@ -196,10 +216,31 @@
       font-size: 14px;
       overflow-x: auto;
       margin: 12px 0;
+      line-height: 1.6;
     }
 
     .code-block code {
-      color: var(--accent);
+      color: #c8d3f5;
+      white-space: pre-wrap;
+      display: block;
+    }
+
+    .code-block .keyword {
+      color: #c099ff;
+      font-weight: 600;
+    }
+
+    .code-block .string {
+      color: #c3e88d;
+    }
+
+    .code-block .comment {
+      color: #7982a9;
+      font-style: italic;
+    }
+
+    .code-block .command {
+      color: #82aaff;
     }
 
     .steps {
@@ -424,69 +465,69 @@
 
       <h4>Example with Custom Device and Stream URLs</h4>
       <div class="code-block">
-        <code>[Unit]
-Description=V4L2 Camera Controls Web Interface
-After=network.target
+        <code><span class="keyword">[Unit]</span>
+<span class="keyword">Description</span>=V4L2 Camera Controls Web Interface
+<span class="keyword">After</span>=network.target
 
-[Service]
-Type=simple
-User=pi
-WorkingDirectory=/home/pi/v4l2-ctrls
-ExecStart=/home/pi/v4l2-ctrls/venv/bin/python3 /home/pi/v4l2-ctrls/v4l2-ctrls.py \
+<span class="keyword">[Service]</span>
+<span class="keyword">Type</span>=simple
+<span class="keyword">User</span>=pi
+<span class="keyword">WorkingDirectory</span>=/home/pi/v4l2-ctrls
+<span class="keyword">ExecStart</span>=/home/pi/v4l2-ctrls/venv/bin/python3 /home/pi/v4l2-ctrls/v4l2-ctrls.py \
   --device /dev/video2 \
-  --camera-url "http://10.0.3.229:8081/" \
-  --stream-path-mjpg "{prefix}?action=stream" \
-  --stream-path-snapshot "{prefix}?action=snapshot" \
+  --camera-url <span class="string">"http://10.0.3.229:8081/"</span> \
+  --stream-path-mjpg <span class="string">"{prefix}?action=stream"</span> \
+  --stream-path-snapshot <span class="string">"{prefix}?action=snapshot"</span> \
   --host 0.0.0.0 \
   --port 5000
-Restart=always
-RestartSec=10
+<span class="keyword">Restart</span>=always
+<span class="keyword">RestartSec</span>=10
 
-[Install]
-WantedBy=multi-user.target</code>
+<span class="keyword">[Install]</span>
+<span class="keyword">WantedBy</span>=multi-user.target</code>
       </div>
 
       <h4>Common MainsailOS/FluiddPi Streamer Defaults</h4>
       <p>If you're using the standard MainsailOS/FluiddPi webcam endpoints (often via crowsnest), these settings are typical:</p>
 
       <div class="code-block">
-        <code>ExecStart=/home/pi/v4l2-ctrls/venv/bin/python3 /home/pi/v4l2-ctrls/v4l2-ctrls.py \
-  --camera-url "http://127.0.0.1/" \
+        <code><span class="keyword">ExecStart</span>=/home/pi/v4l2-ctrls/venv/bin/python3 /home/pi/v4l2-ctrls/v4l2-ctrls.py \
+  --camera-url <span class="string">"http://127.0.0.1/"</span> \
   --stream-prefix /dev/video0=/webcam/ \
-  --stream-path-mjpg "{prefix}?action=stream" \
-  --stream-path-snapshot "{prefix}?action=snapshot" \
+  --stream-path-mjpg <span class="string">"{prefix}?action=stream"</span> \
+  --stream-path-snapshot <span class="string">"{prefix}?action=snapshot"</span> \
   --host 0.0.0.0 \
   --port 5000</code>
       </div>
 
       <p>After making changes, reload and restart:</p>
       <div class="code-block">
-        <code>sudo systemctl daemon-reload
-sudo systemctl restart v4l2-ctrls</code>
+        <code><span class="command">sudo</span> systemctl daemon-reload
+<span class="command">sudo</span> systemctl restart v4l2-ctrls</code>
       </div>
     </div>
 
     <div class="section">
       <h3>Managing the Service</h3>
       <div class="code-block">
-        <code>sudo systemctl status v4l2-ctrls
-sudo journalctl -u v4l2-ctrls -f
-sudo systemctl restart v4l2-ctrls
-sudo systemctl stop v4l2-ctrls
-sudo systemctl start v4l2-ctrls
-sudo systemctl disable v4l2-ctrls
-sudo systemctl enable v4l2-ctrls</code>
+        <code><span class="command">sudo</span> systemctl status v4l2-ctrls
+<span class="command">sudo</span> journalctl -u v4l2-ctrls -f
+<span class="command">sudo</span> systemctl restart v4l2-ctrls
+<span class="command">sudo</span> systemctl stop v4l2-ctrls
+<span class="command">sudo</span> systemctl start v4l2-ctrls
+<span class="command">sudo</span> systemctl disable v4l2-ctrls
+<span class="command">sudo</span> systemctl enable v4l2-ctrls</code>
       </div>
     </div>
 
     <div class="section">
       <h3>Uninstall</h3>
       <div class="code-block">
-        <code>sudo systemctl stop v4l2-ctrls
-sudo systemctl disable v4l2-ctrls
-sudo rm /etc/systemd/system/v4l2-ctrls.service
-sudo rm -rf /home/&lt;user&gt;/v4l2-ctrls
-sudo systemctl daemon-reload</code>
+        <code><span class="command">sudo</span> systemctl stop v4l2-ctrls
+<span class="command">sudo</span> systemctl disable v4l2-ctrls
+<span class="command">sudo</span> rm /etc/systemd/system/v4l2-ctrls.service
+<span class="command">sudo</span> rm -rf /home/&lt;user&gt;/v4l2-ctrls
+<span class="command">sudo</span> systemctl daemon-reload</code>
       </div>
     </div>
 
@@ -495,16 +536,16 @@ sudo systemctl daemon-reload</code>
 
       <h4>Service Won't Start</h4>
       <div class="code-block">
-        <code># Check logs
-sudo journalctl -u v4l2-ctrls -n 50
+        <code><span class="comment"># Check logs</span>
+<span class="command">sudo</span> journalctl -u v4l2-ctrls -n 50
 
-# Check if device exists
+<span class="comment"># Check if device exists</span>
 ls -la /dev/video*
 
-# Test manually
+<span class="comment"># Test manually</span>
 cd /home/&lt;user&gt;/v4l2-ctrls
 source venv/bin/activate
-python3 v4l2-ctrls.py --device /dev/video0 --camera-url "http://127.0.0.1/"</code>
+python3 v4l2-ctrls.py --device /dev/video0 --camera-url <span class="string">"http://127.0.0.1/"</span></code>
       </div>
 
       <h4>Camera Preview Not Working</h4>
@@ -522,10 +563,10 @@ python3 v4l2-ctrls.py --device /dev/video0 --camera-url "http://127.0.0.1/"</cod
       <h4>Port 5000 Already in Use</h4>
       <p>Change the port in the service file to something else (e.g., 5001):</p>
       <div class="code-block">
-        <code>sudo nano /etc/systemd/system/v4l2-ctrls.service
-# Change --port 5000 to --port 5001
-sudo systemctl daemon-reload
-sudo systemctl restart v4l2-ctrls</code>
+        <code><span class="command">sudo</span> nano /etc/systemd/system/v4l2-ctrls.service
+<span class="comment"># Change --port 5000 to --port 5001</span>
+<span class="command">sudo</span> systemctl daemon-reload
+<span class="command">sudo</span> systemctl restart v4l2-ctrls</code>
       </div>
     </div>
   </main>
