@@ -22,10 +22,11 @@ Touch-friendly web UI for managing V4L2 camera controls with embedded video prev
 
 ## Installation
 
-For the installer, see [docs/INSTALL.md](docs/INSTALL.md).
+See the full [installation guide](https://justinh-rahb.github.io/v4l2-ctrls/) for one-line installer instructions, systemd service setup, and troubleshooting.
 
+**Quick manual install:**
 ```sh
-git clone <repo-url>
+git clone https://github.com/justinh-rahb/v4l2-ctrls.git
 cd v4l2-ctrls
 python3 -m venv .venv
 source .venv/bin/activate
@@ -119,6 +120,13 @@ template variables as above, plus `{basename}` for the device basename (e.g., `v
 - `v4l2_ctrls/utils.py` - Logging and helper utilities
 - `templates/` - Jinja templates for the UI
 - `static/` - CSS and JavaScript assets
+
+## Documentation
+
+- [Installation Guide](https://justinh-rahb.github.io/v4l2-ctrls/) - One-line installer, systemd setup, and troubleshooting
+- [API Reference](.github/API.md) - REST API endpoints and examples
+- [Architecture Overview](.github/ARCHITECTURE.md) - System design and components
+- [Development Setup](.github/DEVELOPMENT.md) - Local development instructions
 
 ## API endpoints
 
