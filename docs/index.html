@@ -184,12 +184,48 @@
       margin: 0 auto 20px;
       position: relative;
       overflow-x: auto;
+      display: flex;
+      align-items: center;
+      gap: 16px;
     }
 
     .hero .install-command code {
       color: var(--accent);
       display: block;
       white-space: nowrap;
+      flex: 1;
+    }
+
+    .copy-button {
+      background: var(--panel-strong);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .copy-button:hover {
+      background: var(--accent);
+      color: #0b1020;
+      transform: translateY(-1px);
+    }
+
+    .copy-button.copied {
+      background: #4ade80;
+      color: #0b1020;
+    }
+
+    .copy-button svg {
+      width: 16px;
+      height: 16px;
     }
 
     .github-link {
@@ -477,7 +513,14 @@
       <p>Touch-friendly web UI for managing V4L2 camera controls with embedded video preview</p>
 
       <div class="install-command">
-        <code>curl -sSL https://raw.githubusercontent.com/justinh-rahb/v4l2-ctrls/main/install.sh | sudo bash</code>
+        <code id="install-cmd">curl -sSL https://justinh-rahb.github.io/v4l2-ctrls/install.sh | sudo bash</code>
+        <button class="copy-button" onclick="copyToClipboard('install-cmd', this)">
+          <svg fill="currentColor" viewBox="0 0 16 16">
+            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+          </svg>
+          Copy
+        </button>
       </div>
 
       <a href="https://github.com/justinh-rahb/v4l2-ctrls" class="github-link">
@@ -508,13 +551,13 @@
       <p>The easiest way to get started is with the automated installer script:</p>
 
       <div class="code-block">
-        <code>curl -sSL https://raw.githubusercontent.com/justinh-rahb/v4l2-ctrls/main/install.sh | sudo bash</code>
+        <code>curl -sSL https://justinh-rahb.github.io/v4l2-ctrls/install.sh | sudo bash</code>
       </div>
 
       <p>To install a different branch, tag, or commit, set <code>INSTALL_REF</code>:</p>
 
       <div class="code-block">
-        <code>curl -sSL https://raw.githubusercontent.com/justinh-rahb/v4l2-ctrls/main/install.sh | sudo INSTALL_REF=feature-branch bash</code>
+        <code>curl -sSL https://justinh-rahb.github.io/v4l2-ctrls/install.sh | sudo INSTALL_REF=feature-branch bash</code>
       </div>
     </div>
 
@@ -682,6 +725,25 @@ python3 v4l2-ctrls.py --device /dev/video0 --camera-url <span class="string">"ht
   </footer>
 
   <script>
+    // Copy to clipboard functionality
+    function copyToClipboard(elementId, button) {
+      const element = document.getElementById(elementId);
+      const text = element.textContent;
+
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = button.innerHTML;
+        button.classList.add('copied');
+        button.innerHTML = '<svg fill="currentColor" viewBox="0 0 16 16"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>Copied!';
+
+        setTimeout(() => {
+          button.classList.remove('copied');
+          button.innerHTML = originalText;
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+      });
+    }
+
     // Screenshot switching functionality
     function updateScreenshot(variant) {
       const lightScreenshot = document.querySelector('.screenshot-light');
