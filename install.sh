@@ -1,6 +1,6 @@
 #!/bin/bash
 # V4L2 Controls Installer for Klipper Printers
-# Usage: curl -sSL https://raw.githubusercontent.com/justinh-rahb/v4l2-ctrls/refs/heads/main/install.sh | bash
+# Usage: curl -sSL https://justinh-rahb.github.io/v4l2-ctrls/install.sh | sudo bash
 
 set -e
 
