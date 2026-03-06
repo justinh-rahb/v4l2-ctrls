@@ -137,6 +137,10 @@ template variables as above, plus `{basename}` for the device basename (e.g., `v
 - `GET /api/v4l2/info?cam=<cam_id>` - Get device information
 - `GET /api/v4l2/debug?cam=<cam_id>` - Debug raw `v4l2-ctl` output
 
+---
+
+[![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/wildtang3nt)
+
 ## Contributing
 
 Pull requests are welcome. Please keep changes focused and include any relevant documentation or testing notes.
